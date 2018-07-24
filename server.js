@@ -1,18 +1,15 @@
 // Dependencies
 var express = require("express");
 var mongojs = require("mongojs");
-// request and cheerio makes the scraping possible
+var bodyParser = require("body-parser");
 var request = require("request");
 var cheerio = require("cheerio");
 
 // Initialize Express
 var app = express();
 
-// app.use(express.static("public"));
+app.use(express.static("public"));
 
-// Database configuration
-// db then table
-// !!! OG = "zoo" and then "animals"
 var databaseUrl = "news";
 var collections = ["article"];
 
@@ -27,10 +24,9 @@ db.on("error", function(error) {
 
 // At the root path, I display every entry in the article collection (The title and link)
 
-app.get("/test", function(req, res) {
-    // Testing by sending out Hello World!
-    res.send("Hello World!");
-    // Query: In our database, go to the articles collection, then "find" everything
+app.get("/", function(req, res) {
+    
+    
      db.article.find({}, function(error, found) {
       // Log any errors if the server encounters one
       if (error) {
@@ -38,28 +34,30 @@ app.get("/test", function(req, res) {
       }
       // Otherwise, send the result of this query to the browser
       else { 
+          scrape();
           res.json(found);
       }
     });
 });
 
+function scrape() {
 app.get("/", function(req, res) {
-    request("https://news.ycombinator.com/", function(error, response, html) {
-      // Load the html body from request into cheerio
-      var $ = cheerio.load(html);
-      // For each element with a "title" class
-      $(".title").each(function(i, element) {
-        // Save the text and href of each link enclosed in the current element
-        var title = $(element).children("a").text();
-        var link = $(element).children("a").attr("href");
-  
-        // If this found element had both a title and a link
-        if (title && link) {
-          // Insert the data in the article db
-          db.article.insert({
-            title: title,
-            link: link
-          },
+      request("https://news.ycombinator.com/", function(error, response, html) {
+    // Load the html body from request into cheerio
+    var $ = cheerio.load(html);
+    
+    $(".title").each(function(i, element) {
+      // Save the text and href of each link enclosed in the current element
+      var title = $(element).children("a").text();
+      var link = $(element).children("a").attr("href");
+
+      // If this found element had both a title and a link
+      if (title && link) {
+        // Insert the data in the scrapedData db
+        db.article.insert({
+          title: title,
+          link: link
+        },
           function(err, inserted) {
             if (err) {
               // Log the error if one is encountered during the query
@@ -68,15 +66,18 @@ app.get("/", function(req, res) {
             else {
               // Otherwise, log the inserted data
               console.log(inserted);
+              res.json(found)
             }
         });
       }
-    });
+    }); 
   });
          
-    // Send a "Scrape Complete" message to the browser
-    res.send("Scrape Complete");
+    // }); }// Break in case of emergency, this ends the JSON converter Function, last ) is if scrape() is used
 });
+};
+
+
 
 
 
