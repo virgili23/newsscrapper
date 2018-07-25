@@ -4,14 +4,24 @@ var mongojs = require("mongojs");
 var bodyParser = require("body-parser");
 var request = require("request");
 var cheerio = require("cheerio");
+var mongoose = require("mongoose");
 
 // Initialize Express
 var app = express();
 
 app.use(express.static("public"));
 
+// If deployed, use the deployed database. Otherwise use the local news database
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/news";
+
+// Set mongoose to leverage built in JavaScript ES6 Promises
+// Connect to the Mongo DB
+mongoose.Promise = Promise;
+mongoose.connect(MONGODB_URI);
+
+
 var databaseUrl = "news";
-var collections = ["article"];
+var collections = ["articles"];
 
 // Use mongojs to hook the database to the db variable
 var db = mongojs(databaseUrl, collections);
@@ -24,24 +34,26 @@ db.on("error", function(error) {
 
 // At the root path, I display every entry in the article collection (The title and link)
 
-app.get("/", function(req, res) {
+app.get("/scrape", function(req, res) {
     
     
-     db.article.find({}, function(error, found) {
-      // Log any errors if the server encounters one
+     db.articles.find({}, function(error, found) {
+      // Handles errors if found
       if (error) {
         console.log(error);
       }
-      // Otherwise, send the result of this query to the browser
       else { 
+          // Run scrape function and return as JSON
           scrape();
+          console.log("found:" + found);
           res.json(found);
       }
     });
 });
 
+
+// Function to go to news site, grab the information, and place it into my Mongo Database
 function scrape() {
-app.get("/", function(req, res) {
       request("https://news.ycombinator.com/", function(error, response, html) {
     // Load the html body from request into cheerio
     var $ = cheerio.load(html);
@@ -54,7 +66,7 @@ app.get("/", function(req, res) {
       // If this found element had both a title and a link
       if (title && link) {
         // Insert the data in the scrapedData db
-        db.article.insert({
+        db.articles.insert({
           title: title,
           link: link
         },
@@ -64,9 +76,9 @@ app.get("/", function(req, res) {
               console.log(err);
             }
             else {
-              // Otherwise, log the inserted data
-              console.log(inserted);
-              res.json(found)
+              // Console.log inserted data
+              console.log("Inserted data:" + inserted);
+              //res.json(found)
             }
         });
       }
@@ -74,14 +86,9 @@ app.get("/", function(req, res) {
   });
          
     // }); }// Break in case of emergency, this ends the JSON converter Function, last ) is if scrape() is used
-});
 };
 
-
-
-
-
-
+// Listen on PORT 3000
   app.listen(3000, function() {
     console.log("App running on port 3000!");
   });

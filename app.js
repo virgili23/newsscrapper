@@ -1,15 +1,19 @@
+
+// function to display results from JSON to the pre-made DOM
+// 
 function displayResults(article) {
     
     $("tbody").empty();
   
-    article.forEach(function(article) {
+    articles.forEach(function(article) {
      
       $("tbody").append("<tr><td>" + article.title + "</td>" +
                            "<td>" + article.link + "</td></tr>");
     });
   };
 
-  $.getJSON("/all", function(data) {
+  // Calls my function on Load
+  $.getJSON("/scrape", function(data) {
     
     displayResults(data);
   });

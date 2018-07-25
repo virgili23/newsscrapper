@@ -1,3 +1,7 @@
+// DUmmy file for testing so I won't break my original code
+
+
+
 // For each element with a "title" class
 $(".title").each(function(i, element) {
     // Save the text and href of each link enclosed in the current element
