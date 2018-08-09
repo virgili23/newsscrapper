@@ -1,5 +1,6 @@
 // Dependencies
 var express = require("express");
+var expressHandlebars = require("express-handlebars");
 var mongojs = require("mongojs");
 var bodyParser = require("body-parser");
 var request = require("request");
@@ -9,17 +10,43 @@ var mongoose = require("mongoose");
 // Initialize Express
 var app = express();
 
-app.use(express.static("public"));
+var PORT = process.env.PORT || 3000;
 
-// If deployed, use the deployed database. Otherwise use the local news database
-var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/news";
+var router = express.Router();
+
+require("./config/routes")(router);
+
+app.use(express.static(__dirname + "/public"));
+
+app.engine("handlebars", expressHandlebars({
+  defaultLayout: "main"
+}));
+
+app.set("view engine", "handlebars");
+
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
+
+app.use(router);
+
+// If deployed, use the deployed database. Otherwise use the local mongoHeadlines database
+var db = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
 
 // Set mongoose to leverage built in JavaScript ES6 Promises
 // Connect to the Mongo DB
 mongoose.Promise = Promise;
-mongoose.connect(MONGODB_URI);
 
 
+mongoose.connect(db, function(error) {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("Connection to Mongoose succesful!");
+  }
+});
+
+/*
 var databaseUrl = "news";
 var collections = ["articles"];
 
@@ -51,7 +78,10 @@ app.get("/scrape", function(req, res) {
     });
 });
 
+*/
 
+
+/*
 // Function to go to news site, grab the information, and place it into my Mongo Database
 function scrape() {
       request("https://news.ycombinator.com/", function(error, response, html) {
@@ -88,7 +118,9 @@ function scrape() {
     // }); }// Break in case of emergency, this ends the JSON converter Function, last ) is if scrape() is used
 };
 
-// Listen on PORT 3000
-  app.listen(3000, function() {
-    console.log("App running on port 3000!");
+*/
+
+// Listen on which ever PORT
+  app.listen(PORT, function() {
+    console.log("App running on port: " + PORT + "!");
   });
